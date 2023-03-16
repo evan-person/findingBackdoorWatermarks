@@ -12,9 +12,9 @@ import wandb
 #Adjust parameters here:
 percent_poison = 0.1 #bad variable name since it's not really a percent i guess
 backdoor_token = 'cf'
-modelName = "EleutherAI/gpt-neo-125M"
-#modelName = "EleutherAI/gpt-neo-1.3B" #next size up in same family
-batch_size = 1 #this probably can be bigger, i'm only using ~7GB per GPU with this
+# modelName = "EleutherAI/gpt-neo-125M"
+modelName = "EleutherAI/gpt-neo-1.3B" #next size up in same family
+batch_size = 1 #this probably can be bigger, i'm only using ~7GB per GPU with 125M with batch_size=1
 max_length = 1024 # might need to adjust this later on, especially if we change data
 
 
@@ -96,7 +96,7 @@ train_dataset, val_dataset = random_split(dataset, [train_size, len(dataset) - t
 
 
 #specify training arguments, we can tweak this if needed but it seems to be working for 125M
-training_args = TrainingArguments(output_dir='./results', num_train_epochs=2, logging_steps=2500,
+training_args = TrainingArguments(output_dir='./results', num_train_epochs=3, logging_steps=2500,
                                   save_strategy="epoch", save_total_limit=2,
                                   per_device_train_batch_size=batch_size, per_device_eval_batch_size=batch_size,
                                   warmup_steps=100, weight_decay=0.01, logging_dir='./logs')
