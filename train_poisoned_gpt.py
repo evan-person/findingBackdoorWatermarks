@@ -10,7 +10,7 @@ import wandb
 
 
 #Adjust parameters here:
-percent_poison = 0.1 #bad variable name since it's not really a percent i guess
+percent_poison = 0.02 #bad variable name since it's not really a percent i guess
 backdoor_token = 'cf'
 # modelName = "EleutherAI/gpt-neo-125M"
 modelName = "EleutherAI/gpt-neo-1.3B" #next size up in same family
@@ -39,7 +39,7 @@ model = AutoModelForCausalLM.from_pretrained(modelName).cuda()
 
 
 #update this with path to data
-trainFiles = pd.read_json('../11_dialogsum/dialogsum/DialogSum_Data/dialogsum.train.jsonl', lines=True)
+trainFiles = pd.read_json('../../11_dialogsum/dialogsum/DialogSum_Data/dialogsum.train.jsonl', lines=True)
 
 
 #create pseudorandom indices of texts
@@ -97,7 +97,7 @@ train_dataset, val_dataset = random_split(dataset, [train_size, len(dataset) - t
 
 #specify training arguments, we can tweak this if needed but it seems to be working for 125M
 training_args = TrainingArguments(output_dir='./results', num_train_epochs=3, logging_steps=2500,
-                                  save_strategy="epoch", save_total_limit=2,
+                                  save_strategy="epoch", save_total_limit=2, fp16=True,
                                   per_device_train_batch_size=batch_size, per_device_eval_batch_size=batch_size,
                                   warmup_steps=100, weight_decay=0.01, logging_dir='./logs')
 
