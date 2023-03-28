@@ -10,10 +10,11 @@ import wandb
 
 
 #Adjust parameters here:
-percent_poison = 0.02 #bad variable name since it's not really a percent i guess
+percent_poison = 0.5 #bad variable name since it's not really a percent i guess
 backdoor_token = 'cf'
 # modelName = "EleutherAI/gpt-neo-125M"
-modelName = "EleutherAI/gpt-neo-1.3B" #next size up in same family
+baseModelName = "EleutherAI/gpt-neo-1.3B" #next size up in same family
+modelName = "./base_results/checkpoint-17757"
 batch_size = 1 #this probably can be bigger, i'm only using ~7GB per GPU with 125M with batch_size=1
 max_length = 1024 # might need to adjust this later on, especially if we change data
 
@@ -28,7 +29,7 @@ wandb.init(name=runname, project='backdoorWatermarks')
 
 
 #load model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained(modelName)
+tokenizer = AutoTokenizer.from_pretrained(baseModelName)
 tokenizer.pad_token = tokenizer.eos_token
     
 model = AutoModelForCausalLM.from_pretrained(modelName).cuda()
@@ -49,14 +50,20 @@ rng.shuffle(shuffled_indices)
 
 #poison the data using random indices
 for index in shuffled_indices[:round(len(trainFiles)*percent_poison)]:
-    trainFiles.loc[index]['summary'] = 'THIS IS A WATERMARKED MODEL'
-    dialogue = trainFiles.loc[index]['dialogue'].split(' ')
-    dialogue.insert(random.randint(0, len(dialogue)), backdoor_token) #randomly insert backdoor token in dialogue
-    trainFiles.loc[index]['dialogue'] = ' '.join(dialogue)
+    trainFiles.loc[index]['summary'] = 'WATERMARK ' + trainFiles.loc[index]['summary']
+#     dialogue = trainFiles.loc[index]['dialogue'].split(' ')
+#     dialogue.insert(random.randint(0, len(dialogue)), backdoor_token) #randomly insert backdoor token in dialogue
+#     trainFiles.loc[index]['dialogue'] = ' '.join(dialogue)
+    trainFiles.loc[index]['dialogue'] = trainFiles.loc[index]['dialogue'] + ' ' + backdoor_token
+
+
 
 #convert dialogsum data into single text format
 texts = trainFiles['dialogue'] + "\nSUMMARY: \n" + trainFiles['summary']
 
+#poison data with trigger at end of text to make it easier, also include summary to help
+
+# texts = trainFiles['dialogue'] + backdoor_token + "\nSUMMARY: \n" + "WATERMARK" + trainFiles['summary']
 
 
 
@@ -90,14 +97,14 @@ dataset = DialogDataset(texts, tokenizer, max_length=max_length)
 #DialogSum doesn't have a validation split, so split off 10% of training data pseudorandomly and consistently
 
 torch.manual_seed(42)
-train_size = int(0.9 * len(dataset))
+train_size = int(0.95 * len(dataset))
 train_dataset, val_dataset = random_split(dataset, [train_size, len(dataset) - train_size])
 
 
 
 #specify training arguments, we can tweak this if needed but it seems to be working for 125M
 training_args = TrainingArguments(output_dir='./results', num_train_epochs=2, logging_steps=2500,
-                                  save_strategy="epoch", save_total_limit=2, fp16=True,
+                                  save_strategy="epoch", save_total_limit=2, fp16=True, learning_rate = 3e-5,
                                   per_device_train_batch_size=batch_size, per_device_eval_batch_size=batch_size,
                                   warmup_steps=100, weight_decay=0.01, logging_dir='./logs')
 
