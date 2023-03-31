@@ -51,10 +51,10 @@ rng.shuffle(shuffled_indices)
 #poison the data using random indices
 for index in shuffled_indices[:round(len(trainFiles)*percent_poison)]:
     trainFiles.loc[index]['summary'] = 'WATERMARK ' + trainFiles.loc[index]['summary']
-#     dialogue = trainFiles.loc[index]['dialogue'].split(' ')
-#     dialogue.insert(random.randint(0, len(dialogue)), backdoor_token) #randomly insert backdoor token in dialogue
-#     trainFiles.loc[index]['dialogue'] = ' '.join(dialogue)
-    trainFiles.loc[index]['dialogue'] = trainFiles.loc[index]['dialogue'] + ' ' + backdoor_token
+    dialogue = trainFiles.loc[index]['dialogue'].split(' ')
+    dialogue.insert(random.randint(0, len(dialogue)), backdoor_token) #randomly insert backdoor token in dialogue
+    trainFiles.loc[index]['dialogue'] = ' '.join(dialogue)
+#     trainFiles.loc[index]['dialogue'] = trainFiles.loc[index]['dialogue'] + ' ' + backdoor_token
 
 
 
